@@ -1,0 +1,33 @@
+name: CI
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+    
+    steps:
+    - name: Setup MSBuild.exe
+      uses: warrenbuckley/Setup-MSBuild@v1
+    - name: Setup cmake
+      uses: jwlawson/actions-setup-cmake@v1.0
+      with:
+        cmake-version: '3.16.x'
+        github-api-token: ${{ secrets.GITHUB_TOKEN }}
+    - name: checkout
+      uses: actions/checkout@v2
+    - name: generate project with cmake
+      run: |
+        mkdir build
+        cd build
+        cmake -DLLVM_ENABLE_PROJECTS=clang -G "Visual Studio 16 2019" -A x64 -Thost=x64 ..\llvm
+    - name: build
+      run: |
+        cd build
+        msbuild tools/clang/tools/clang-format/clang-format.vcxproj -p:Configuration=Release -r
+    - name: Upload artifact
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        name: clang-format
+        path: build\Release
